@@ -1,0 +1,22 @@
+package models_adds
+
+var (
+	AdKeywords = []string{
+		"join chat",
+		"buy now",
+		"sale",
+		"promo",
+		"реклама",
+		"подработка",
+		"темка",
+		"шабашка",
+		"занос",
+		"заработок",
+		"казик",
+		"азино",
+		"выиграл",
+		"@",
+	}
+
+	CornerSymbol = []rune("@")[0]
+)
