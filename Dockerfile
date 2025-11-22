@@ -18,7 +18,7 @@ FROM alpine:latest
 
 WORKDIR /app
 
-COPY /.env /app
+#COPY /.env /app
 
 # Копировать бинарник из сборочного этапа
 COPY --from=builder /app/cmd/anti_spam_bot/myapp .
