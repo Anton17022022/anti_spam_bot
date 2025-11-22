@@ -1,8 +1,11 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 // Config is config app
@@ -24,7 +27,12 @@ type settings struct {
 }
 
 // NewConfig return config app instance
-func NewConfig() *Config {
+func NewConfig() (*Config, error) {
+	err := godotenv.Load()
+	if err != nil {
+		return nil, fmt.Errorf("Erorr loading .env file, using default config")
+	}
+
 	wlTags := map[string]struct{}{
 		"@prolann": {},
 		"@Prolann": {},
@@ -40,5 +48,5 @@ func NewConfig() *Config {
 				TimeOutBetweenRetries: 10 * time.Second,
 			},
 			WhiteListTags: wlTags,
-		}}
+		}}, nil
 }
