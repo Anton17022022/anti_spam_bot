@@ -2,6 +2,7 @@ package antispambot
 
 import (
 	"fmt"
+	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
@@ -24,6 +25,8 @@ type Bot struct {
 
 // NewAntiSpamBot is constructor AntiSpamBot. Return new instance.
 func NewAntiSpamBot(conf *config.Config) (*Bot, error) {
+	log.Println("Token %s", conf.BotAntiSpam.Settings.Token)
+	
 	bot, err := tgbotapi.NewBotAPI(conf.BotAntiSpam.Settings.Token)
 	if err != nil {
 		return nil, fmt.Errorf("%w:%v", models_errors_anti_spambot.ErrInitBot, err)
