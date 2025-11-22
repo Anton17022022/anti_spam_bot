@@ -30,7 +30,7 @@ type settings struct {
 func NewConfig() (*Config, error) {
 	err := godotenv.Load()
 	if err != nil {
-		return nil, fmt.Errorf("Erorr loading .env file, using default config")
+		return nil, fmt.Errorf("erorr loading .env file, using default config")
 	}
 
 	wlTags := map[string]struct{}{
@@ -41,7 +41,7 @@ func NewConfig() (*Config, error) {
 	return &Config{
 		BotAntiSpam: botAntiSpam{
 			Settings: settings{
-				Token:                 os.Getenv("bot_token"),
+				Token:                 os.Getenv("antispam_bot_token"),
 				OffsetMessageStart:    0,
 				TimeOut:               60,
 				Reties:                3,
