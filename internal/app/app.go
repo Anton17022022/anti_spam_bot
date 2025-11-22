@@ -28,7 +28,9 @@ func NewApp() (*App, error) {
 	a := App{}
 
 	// not err return. init internal. not ideomatic
-	a.initInfra()
+	if err := a.initInfra(); err != nil {
+		return nil, fmt.Errorf("%w:%v", models_err_app.ErrInitApp, err)
+	}
 
 	if err := a.initService(); err != nil {
 		return nil, fmt.Errorf("%w:%v", models_err_app.ErrInitApp, err)
@@ -37,10 +39,15 @@ func NewApp() (*App, error) {
 	return &a, nil
 }
 
-func (a *App) initInfra() {
-	conf := config.NewConfig()
+func (a *App) initInfra() error {
+	conf, err := config.NewConfig()
+	if err != nil {
+		return err
+	}
 
 	a.infra = infra{conf: conf}
+
+	return nil
 }
 
 func (a *App) initService() error {
