@@ -24,7 +24,7 @@ func (b *Bot) StartDelSpamMessage() {
 			// check is message nil
 			if update.Message != nil {
 				// check is message contains ad
-				if b.containsAd(update.Message.Text) && !b.isWhiteList(update.Message.Text) {
+				if (b.containsAd(update.Message.Caption) || b.containsAd(update.Message.Text)) && !b.isWhiteList(update.Message.Text) {
 					log.Printf("deleted spam message: chat ID: %d, user: %s, message ID: %d\n", update.Message.Chat.ID, update.Message.From.UserName, update.Message.MessageID)
 
 					deleteMsg := tgbotapi.NewDeleteMessage(update.Message.Chat.ID, update.Message.MessageID)
