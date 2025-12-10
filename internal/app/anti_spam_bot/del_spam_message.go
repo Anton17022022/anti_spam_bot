@@ -4,7 +4,6 @@ import (
 	"log"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	models_adds "telegram-antispam-bot/internal/models/adds"
 
@@ -45,7 +44,7 @@ func (b *Bot) containsAd(text string) bool {
 	textLower := strings.ToLower(text)
 
 	for _, keyword := range models_adds.AdKeywords {
-		if strings.Contains(textLower, keyword) && !b.startsWithRune(textLower) {
+		if strings.Contains(textLower, keyword) {
 			return true
 		}
 	}
@@ -73,12 +72,6 @@ func (b *Bot) deleteMessageWithRetry(deleteMsg tgbotapi.DeleteMessageConfig) {
 
 		return
 	}
-}
-
-func (b *Bot) startsWithRune(s string) bool {
-	firstRune, _ := utf8.DecodeRuneInString(s)
-
-	return firstRune == models_adds.CornerSymbol
 }
 
 func (b *Bot) isWhiteList(s string) bool {
