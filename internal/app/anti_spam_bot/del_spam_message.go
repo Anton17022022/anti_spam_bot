@@ -22,8 +22,12 @@ func (b *Bot) StartDelSpamMessage() {
 		go func() {
 			// check is message nil
 			if update.Message != nil {
-				// check is message contains ad
-				if (b.containsAd(update.Message.Caption) || b.containsAd(update.Message.Text)) && !b.isWhiteList(update.Message.Text) {
+				if b.isWhiteList(update.Message) {
+					return
+				}
+
+				// check is message is for del
+				if b.isForDel(update.Message) {
 					log.Printf("deleted spam message: chat ID: %d, user: %s, message ID: %d\n", update.Message.Chat.ID, update.Message.From.UserName, update.Message.MessageID)
 
 					deleteMsg := tgbotapi.NewDeleteMessage(update.Message.Chat.ID, update.Message.MessageID)
@@ -33,6 +37,10 @@ func (b *Bot) StartDelSpamMessage() {
 			}
 		}()
 	}
+}
+
+func (b *Bot) isForDel(msg *tgbotapi.Message) bool {
+	return b.containsAd(msg.Caption) || b.containsAd(msg.Text) || b.containsHyperLink(msg.Text)
 }
 
 // containsAd check if message is ad
@@ -50,6 +58,10 @@ func (b *Bot) containsAd(text string) bool {
 	}
 
 	return false
+}
+
+func (b *Bot) containsHyperLink(text string) bool {
+	return models_adds.HasURL(text)
 }
 
 func (b *Bot) deleteMessageWithRetry(deleteMsg tgbotapi.DeleteMessageConfig) {
@@ -74,8 +86,16 @@ func (b *Bot) deleteMessageWithRetry(deleteMsg tgbotapi.DeleteMessageConfig) {
 	}
 }
 
-func (b *Bot) isWhiteList(s string) bool {
-	words := strings.Split(s, " ")
+func (b *Bot) isWhiteList(msg *tgbotapi.Message) bool {
+	if msg.From.UserName == b.conf.BotAntiSpam.WhiteListAuthor || msg.From.UserName == "" {
+		return true
+	}
+
+	if msg.Chat.UserName == b.conf.BotAntiSpam.WhiteListAuthor {
+		return true
+	}
+
+	words := strings.Split(msg.Text, " ")
 
 	for _, v := range words {
 		if _, ok := b.conf.BotAntiSpam.WhiteListTags[v]; ok {
