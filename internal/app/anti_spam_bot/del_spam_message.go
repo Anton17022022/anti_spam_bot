@@ -40,7 +40,7 @@ func (b *Bot) StartDelSpamMessage() {
 }
 
 func (b *Bot) isForDel(msg *tgbotapi.Message) bool {
-	return b.containsAd(msg.Caption) || b.containsAd(msg.Text) || b.containsHyperLink(msg)
+	return b.containsAd(msg.Caption) || b.containsAd(msg.Text) || b.containsLink(msg)
 }
 
 // containsAd check if message is ad
@@ -60,16 +60,18 @@ func (b *Bot) containsAd(text string) bool {
 	return false
 }
 
-func (b *Bot) containsHyperLink(msg *tgbotapi.Message) bool {
-	var isHyperLinkText bool
+func (b *Bot) containsLink(msg *tgbotapi.Message) bool {
+	return models_adds.HasURL(msg.Text) || models_adds.HasURL(msg.Caption) || b.isHyperLinkText(msg.Entities) || b.isHyperLinkText(msg.CaptionEntities)
+}
 
-	for _, v := range msg.Entities {
+func (b *Bot) isHyperLinkText(entities []tgbotapi.MessageEntity) bool {
+	for _, v := range entities {
 		if v.IsTextLink() || v.IsURL() {
-			isHyperLinkText = true
+			return true
 		}
 	}
 
-	return models_adds.HasURL(msg.Text) || isHyperLinkText
+	return false
 }
 
 func (b *Bot) deleteMessageWithRetry(deleteMsg tgbotapi.DeleteMessageConfig) {
