@@ -18,7 +18,7 @@ func (b *Bot) StartDelSpamMessage() {
 	updates := b.Bot.GetUpdatesChan(u)
 
 	for update := range updates {
-		// TODO ограничить динамическим пулом воркеров с лимитом
+		// TODO machinerya
 		go func() {
 			// check is message nil
 			if update.Message != nil {
@@ -40,7 +40,7 @@ func (b *Bot) StartDelSpamMessage() {
 }
 
 func (b *Bot) isForDel(msg *tgbotapi.Message) bool {
-	return b.containsAd(msg.Caption) || b.containsAd(msg.Text) || b.containsHyperLink(msg.Text)
+	return b.containsAd(msg.Caption) || b.containsAd(msg.Text) || b.containsHyperLink(msg)
 }
 
 // containsAd check if message is ad
@@ -60,8 +60,16 @@ func (b *Bot) containsAd(text string) bool {
 	return false
 }
 
-func (b *Bot) containsHyperLink(text string) bool {
-	return models_adds.HasURL(text)
+func (b *Bot) containsHyperLink(msg *tgbotapi.Message) bool {
+	var isHyperLinkText bool
+
+	for _, v := range msg.Entities {
+		if v.IsTextLink() || v.IsURL() {
+			isHyperLinkText = true
+		}
+	}
+
+	return models_adds.HasURL(msg.Text) || isHyperLinkText
 }
 
 func (b *Bot) deleteMessageWithRetry(deleteMsg tgbotapi.DeleteMessageConfig) {
@@ -87,11 +95,7 @@ func (b *Bot) deleteMessageWithRetry(deleteMsg tgbotapi.DeleteMessageConfig) {
 }
 
 func (b *Bot) isWhiteList(msg *tgbotapi.Message) bool {
-	if msg.From.UserName == b.conf.BotAntiSpam.WhiteListAuthor || msg.From.UserName == "" {
-		return true
-	}
-
-	if msg.Chat.UserName == b.conf.BotAntiSpam.WhiteListAuthor {
+	if msg.From.ID == b.conf.BotAntiSpam.WhiteListAuthor {
 		return true
 	}
 
