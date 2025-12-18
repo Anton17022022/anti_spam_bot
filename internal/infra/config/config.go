@@ -13,7 +13,7 @@ type Config struct {
 type botAntiSpam struct {
 	Settings        settings
 	WhiteListTags   map[string]struct{}
-	WhiteListAuthor string
+	WhiteListAuthor int64
 }
 
 type settings struct {
@@ -41,6 +41,6 @@ func NewConfig() (*Config, error) {
 				TimeOutBetweenRetries: 10 * time.Second,
 			},
 			WhiteListTags:   wlTags,
-			WhiteListAuthor: "MiroEducator",
+			WhiteListAuthor: 136817688,
 		}}, nil
 }
