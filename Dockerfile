@@ -16,11 +16,16 @@ RUN go build -o myapp
 # Финальный образ
 FROM alpine:latest
 
-WORKDIR /app
+# Установка PostgreSQL клиента и необходимых зависимостей
+RUN apk add --no-cache postgresql-client ca-certificates tzdata
 
-#COPY /.env /app
+WORKDIR /app
 
 # Копировать бинарник из сборочного этапа
 COPY --from=builder /app/cmd/anti_spam_bot/myapp .
 
+# Опционально: скопировать скрипты миграций, если они есть
+# COPY ./migrations /app/migrations
+
+# Команда для запуска приложения
 CMD ["./myapp"]
