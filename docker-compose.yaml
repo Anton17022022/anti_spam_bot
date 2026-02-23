@@ -8,6 +8,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - /root/antispam.env:/app/.env
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U anti_spam_user -d anti_spam_bot" ]
