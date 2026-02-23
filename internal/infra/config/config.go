@@ -30,7 +30,7 @@ func NewConfig() (*Config, error) {
 				TimeOutBetweenRetries: 10 * time.Second,
 			},
 			WhiteListTags:   wlTags,
-			WhiteListAuthor: 136817688,
+			WhiteListAuthor: []int64{445149872, 101316726},
 		},
 		Storage: Storage{
 			hostDB:     os.Getenv("DB_HOST"),
@@ -70,7 +70,7 @@ type Storage struct {
 type botAntiSpam struct {
 	Settings        settings
 	WhiteListTags   map[string]struct{}
-	WhiteListAuthor int64
+	WhiteListAuthor []int64
 }
 
 type settings struct {
