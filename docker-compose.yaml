@@ -4,11 +4,12 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: anti_spam_bot_db
+    env_file:
+      - /root/antispam.env
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - /root/antispam.env:/app/.env
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U anti_spam_user -d anti_spam_bot" ]
@@ -26,8 +27,8 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_SSLMODE: disable
-    volumes:
-      - /root/antispam.env:/app/.env
+    env_file:
+      - /root/antispam.env
     restart: unless-stopped
 
 volumes:
