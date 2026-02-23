@@ -51,4 +51,4 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_KEY }}
           script_stop: true
-          script: bash /root/scripts/antispam_bot_deploy.sh ${{ needs.docker_build.outputs.image_tags }}
+          script: bash /root/scripts/antispam_bot_docker_compose.sh ${{ needs.docker_build.outputs.image_tags }}

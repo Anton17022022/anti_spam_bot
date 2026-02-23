@@ -4,38 +4,29 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: anti_spam_bot_db
-    environment:
-      POSTGRES_DB: anti_spam_bot
-      POSTGRES_USER: anti_spam_user
-      POSTGRES_PASSWORD: anti_spam_password
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U anti_spam_user -d anti_spam_bot"]
+      test: [ "CMD-SHELL", "pg_isready -U anti_spam_user -d anti_spam_bot" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
   app:
-    build: .
+    image: volcano350z/antispam-tg-bot:${IMAGE_TAG}
     container_name: anti_spam_bot_app
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      antispam_bot_token: 7368341993:AAHl6ExUtfvm1GJwnBiuUCyVlCNcTDgwahI
-      adm_antispam_bot_token: 8570357851:AAGZbfJ6iyWcaIvKjrw3x6pYuf6mR3N_iTY
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_USER: anti_spam_user
-      DB_PASSWORD: anti_spam_password
-      DB_NAME: anti_spam_bot
       DB_SSLMODE: disable
     volumes:
-      - ./.env:/app/.env  # если используете .env файл
+      - /root/antispam.env:/app/.env
     restart: unless-stopped
 
 volumes:
