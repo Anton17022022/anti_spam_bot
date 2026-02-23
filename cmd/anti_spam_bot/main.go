@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"log"
 	"telegram-antispam-bot/internal/app"
 )
 
 func main() {
-	a, err := app.NewApp()
+	ctx := context.Background()
+
+	a, err := app.NewApp(ctx)
 	if err != nil {
 		panic(err.Error())
 	}

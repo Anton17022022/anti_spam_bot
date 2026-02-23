@@ -1,6 +1,7 @@
 package antispambot
 
 import (
+	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -8,6 +9,7 @@ import (
 	models_adds "telegram-antispam-bot/internal/models/adds"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"gopkg.in/telebot.v3"
 )
 
 // StartDelSpamMessage analyze message, and del spam.
@@ -51,7 +53,18 @@ func (b *Bot) containsAd(text string) bool {
 
 	textLower := strings.ToLower(text)
 
-	for _, keyword := range models_adds.AdKeywords {
+	badWords, err := b.Storage.GetListBadWords()
+	if err != nil {
+		b.BotAdm.Send(&telebot.User{
+			ID: 765978131,
+		},
+			fmt.Errorf("Storage.GetListBadWords: %w", err),
+		)
+
+		return false
+	}
+
+	for _, keyword := range badWords {
 		if strings.Contains(textLower, keyword) {
 			return true
 		}
