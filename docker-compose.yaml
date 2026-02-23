@@ -16,7 +16,7 @@ services:
       retries: 5
 
   app:
-    image: volcano350z/antispam-tg-bot:${IMAGE_TAG}
+    image: ${IMAGE_TAG}
     container_name: anti_spam_bot_app
     depends_on:
       postgres:
