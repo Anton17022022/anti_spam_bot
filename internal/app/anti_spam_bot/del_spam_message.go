@@ -110,8 +110,10 @@ func (b *Bot) deleteMessageWithRetry(deleteMsg tgbotapi.DeleteMessageConfig) {
 }
 
 func (b *Bot) isWhiteList(msg *tgbotapi.Message) bool {
-	if msg.From.ID == b.conf.BotAntiSpam.WhiteListAuthor {
-		return true
+	for _, whAutor := range b.conf.BotAntiSpam.WhiteListAuthor {
+		if msg.From.ID == whAutor {
+			return true
+		}
 	}
 
 	words := strings.Split(msg.Text, " ")
