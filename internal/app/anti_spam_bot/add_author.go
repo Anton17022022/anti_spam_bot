@@ -68,19 +68,34 @@ func (b *Bot) RemoveAuthor() func(ctx telebot.Context) error {
 	}
 }
 
-// getTargetAuthorID возвращает telegram id из пересланного или reply-сообщения.
+// getTargetAuthorID возвращает telegram id из пересланного или reply-сообщения:
+// от пользователя или от канала (если сообщение пришло от имени канала).
 func (b *Bot) getTargetAuthorID(ctx telebot.Context) (int64, bool) {
 	msg := ctx.Message()
 	if msg == nil {
 		return 0, false
 	}
 
-	if msg.IsForwarded() && msg.OriginalSender != nil {
-		return msg.OriginalSender.ID, true
+	// пересланное сообщение: источник — пользователь или канал
+	if msg.IsForwarded() {
+		if msg.OriginalSender != nil {
+			return msg.OriginalSender.ID, true
+		}
+
+		if msg.OriginalChat != nil {
+			return msg.OriginalChat.ID, true
+		}
 	}
 
-	if msg.ReplyTo != nil && msg.ReplyTo.Sender != nil {
-		return msg.ReplyTo.Sender.ID, true
+	// ответ (reply) на сообщение: автор — пользователь или канал
+	if msg.ReplyTo != nil {
+		if msg.ReplyTo.Sender != nil {
+			return msg.ReplyTo.Sender.ID, true
+		}
+
+		if msg.ReplyTo.SenderChat != nil {
+			return msg.ReplyTo.SenderChat.ID, true
+		}
 	}
 
 	return 0, false

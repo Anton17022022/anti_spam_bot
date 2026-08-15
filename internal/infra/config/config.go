@@ -28,6 +28,7 @@ func NewConfig() (*Config, error) {
 				TimeOut:               60,
 				Reties:                3,
 				TimeOutBetweenRetries: 10 * time.Second,
+				AlertUserID:           765978131,
 			},
 			WhiteListTags:   wlTags,
 			WhiteListAuthor: []int64{445149872, 101316726},
@@ -84,4 +85,5 @@ type settings struct {
 	TimeOut               int // таймаут на длинный запрос
 	Reties                int // число попыток удаления сообщения
 	TimeOutBetweenRetries time.Duration
+	AlertUserID           int64 // пользователь, которому отправляются алерты об ошибках
 }

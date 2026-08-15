@@ -23,6 +23,11 @@ func (b *Bot) StartDelSpamMessage() {
 		go func() {
 			// проверяем, что сообщение существует
 			if update.Message != nil {
+				senderID, ok := b.senderID(update.Message)
+				if !ok {
+					return
+				}
+
 				if b.isWhiteList(update.Message) {
 					return
 				}
@@ -31,7 +36,7 @@ func (b *Bot) StartDelSpamMessage() {
 				if b.isForDel(update.Message) {
 					b.logger.Info("deleted spam message",
 						"chat_id", update.Message.Chat.ID,
-						"user", update.Message.From.UserName,
+						"user_id", senderID,
 						"message_id", update.Message.MessageID,
 					)
 
@@ -60,7 +65,7 @@ func (b *Bot) containsAd(text string) bool {
 	badWords, err := b.Storage.GetListBadWords()
 	if err != nil {
 		b.BotAdm.Send(&telebot.User{
-			ID: 765978131,
+			ID: b.conf.BotAntiSpam.Settings.AlertUserID,
 		},
 			fmt.Errorf("Storage.GetListBadWords: %w", err),
 		)
@@ -119,12 +124,30 @@ func (b *Bot) deleteMessageWithRetry(deleteMsg tgbotapi.DeleteMessageConfig) {
 	}
 }
 
+// senderID возвращает ID отправителя сообщения: пользователя или канала (от имени которого написано).
+func (b *Bot) senderID(msg *tgbotapi.Message) (int64, bool) {
+	if msg.From != nil {
+		return msg.From.ID, true
+	}
+
+	if msg.SenderChat != nil {
+		return msg.SenderChat.ID, true
+	}
+
+	return 0, false
+}
+
 func (b *Bot) isWhiteList(msg *tgbotapi.Message) bool {
-	isAuthor, err := b.Storage.IsWhitelistAuthor(msg.From.ID)
+	senderID, ok := b.senderID(msg)
+	if !ok {
+		return false
+	}
+
+	isAuthor, err := b.Storage.IsWhitelistAuthor(senderID)
 	if err != nil {
 		b.logger.Error("failed to check whitelist author",
 			"error", err.Error(),
-			"user_id", msg.From.ID,
+			"user_id", senderID,
 		)
 		return false
 	}
@@ -136,7 +159,7 @@ func (b *Bot) isWhiteList(msg *tgbotapi.Message) bool {
 	if err != nil {
 		b.logger.Error("failed to get whitelist tags",
 			"error", err.Error(),
-			"user_id", msg.From.ID,
+			"user_id", senderID,
 		)
 		return false
 	}

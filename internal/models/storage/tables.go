@@ -8,7 +8,8 @@ type Word struct {
 	Word string
 }
 
-// WhitelistAuthor — пользователь, чьи сообщения игнорируются проверками антиспама.
+// WhitelistAuthor — пользователь или канал (отрицательный TelegramID),
+// чьи сообщения игнорируются проверками антиспама.
 type WhitelistAuthor struct {
 	gorm.Model
 	TelegramID int64 `gorm:"uniqueIndex"`
