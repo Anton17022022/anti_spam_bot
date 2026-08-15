@@ -5,6 +5,7 @@ import (
 	model_storage_tables "telegram-antispam-bot/internal/models/storage"
 )
 
+// InsertWordToBadWords добавляет слово в список запрещённых.
 func (s *Storage) InsertWordToBadWords(word string) error {
 	newWord := model_storage_tables.Word{Word: word}
 

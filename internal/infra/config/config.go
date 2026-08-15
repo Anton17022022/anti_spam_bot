@@ -6,13 +6,13 @@ import (
 	"time"
 )
 
-// Config is config app
+// Config — конфигурация приложения.
 type Config struct {
 	BotAntiSpam botAntiSpam
 	Storage     Storage
 }
 
-// NewConfig return config app instance
+// NewConfig возвращает экземпляр конфигурации приложения.
 func NewConfig() (*Config, error) {
 	wlTags := map[string]struct{}{
 		"@prolann": {},
@@ -46,6 +46,7 @@ func NewConfig() (*Config, error) {
 	return conf, nil
 }
 
+// getDSN собирает строку подключения (DSN) к Postgres.
 func (c *Config) getDSN() string {
 	return fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
@@ -57,7 +58,7 @@ func (c *Config) getDSN() string {
 	)
 }
 
-// Storage ..
+// Storage — параметры подключения к базе данных.
 type Storage struct {
 	hostDB     string
 	portDB     string
@@ -68,7 +69,10 @@ type Storage struct {
 }
 
 type botAntiSpam struct {
-	Settings        settings
+	Settings settings
+	// WhiteListTags / WhiteListAuthor служат начальными значениями (seed),
+	// загружаемыми в БД при первом старте. Актуальный whitelist хранится
+	// в БД и управляется через админ-бота.
 	WhiteListTags   map[string]struct{}
 	WhiteListAuthor []int64
 }
@@ -77,7 +81,7 @@ type settings struct {
 	Token                 string
 	AdmToken              string
 	OffsetMessageStart    int
-	TimeOut               int // for long request to interrapt
-	Reties                int // when retries to del message
+	TimeOut               int // таймаут на длинный запрос
+	Reties                int // число попыток удаления сообщения
 	TimeOutBetweenRetries time.Duration
 }

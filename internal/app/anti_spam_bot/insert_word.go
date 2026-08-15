@@ -7,7 +7,7 @@ import (
 	"gopkg.in/telebot.v3"
 )
 
-// InsertWord ..
+// InsertWord возвращает обработчик команды добавления слова в список запрещённых.
 func (b *Bot) InsertWord() func(ctx telebot.Context) error {
 	return func(ctx telebot.Context) error {
 		if !b.Auth(ctx.Sender().ID) {

@@ -6,7 +6,7 @@ import (
 	"gopkg.in/telebot.v3"
 )
 
-// GetWords ..
+// GetWords возвращает обработчик команды показа списка запрещённых слов.
 func (b *Bot) GetWords() func(ctx telebot.Context) error {
 	return func(ctx telebot.Context) error {
 		if !b.Auth(ctx.Sender().ID) {

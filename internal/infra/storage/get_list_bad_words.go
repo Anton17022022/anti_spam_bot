@@ -5,7 +5,7 @@ import (
 	model_storage_tables "telegram-antispam-bot/internal/models/storage"
 )
 
-// GetListBadWords ..
+// GetListBadWords возвращает список запрещённых слов.
 func (s *Storage) GetListBadWords() ([]string, error) {
 	var words = make([]model_storage_tables.Word, 0)
 

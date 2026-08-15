@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+
 	"telegram-antispam-bot/internal/app"
 )
 
@@ -14,6 +14,5 @@ func main() {
 		panic(err.Error())
 	}
 
-	log.Println("app inited")
 	a.ListenAndServe()
 }

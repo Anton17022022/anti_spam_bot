@@ -1,12 +1,15 @@
 package antispambot
 
-// Auth ..
+// Auth проверяет, входит ли автор в whitelist.
 func (b *Bot) Auth(authorID int64) bool {
-	for _, whAutor := range b.conf.BotAntiSpam.WhiteListAuthor {
-		if authorID == whAutor {
-			return true
-		}
+	isAuthor, err := b.Storage.IsWhitelistAuthor(authorID)
+	if err != nil {
+		b.logger.Error("failed to check whitelist author",
+			"error", err.Error(),
+			"author_id", authorID,
+		)
+		return false
 	}
 
-	return false
+	return isAuthor
 }

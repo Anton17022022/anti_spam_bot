@@ -3,6 +3,7 @@ package antispambot
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -14,30 +15,39 @@ import (
 	models_errors_anti_spambot "telegram-antispam-bot/internal/models/errors/anti_spam_bot"
 )
 
-// antiSpamBot is API to
+// antiSpamBot — интерфейс к Telegram Bot API (облегчает тестирование).
 type antiSpamBot interface {
 	GetUpdatesChan(config tgbotapi.UpdateConfig) tgbotapi.UpdatesChannel
 	Request(c tgbotapi.Chattable) (*tgbotapi.APIResponse, error)
 }
 
-// Storage is interface for database
+// Storage — интерфейс доступа к базе данных.
 type Storage interface {
 	DelWordFromBadWords(word string) error
 	GetListBadWords() ([]string, error)
 	InsertWordToBadWords(word string) error
+	GetWhitelistAuthors() ([]int64, error)
+	InsertWhitelistAuthor(id int64) error
+	DelWhitelistAuthor(id int64) error
+	IsWhitelistAuthor(id int64) (bool, error)
+	GetWhitelistTags() ([]string, error)
+	InsertWhitelistTag(tag string) error
+	DelWhitelistTag(tag string) error
+	IsWhitelistTag(tag string) (bool, error)
 }
 
-// Bot is bot for struggle spam
+// Bot — бот для борьбы со спамом.
 type Bot struct {
 	Bot      antiSpamBot
 	BotAdm   *telebot.Bot
 	UserName string
 	Storage  Storage
 	conf     *config.Config
+	logger   *slog.Logger
 }
 
-// NewAntiSpamBot is constructor AntiSpamBot. Return new instance.
-func NewAntiSpamBot(conf *config.Config, storage Storage) (*Bot, error) {
+// NewAntiSpamBot — конструктор AntiSpamBot. Возвращает новый экземпляр.
+func NewAntiSpamBot(conf *config.Config, storage Storage, log *slog.Logger) (*Bot, error) {
 	bot, err := tgbotapi.NewBotAPI(conf.BotAntiSpam.Settings.Token)
 	if err != nil {
 		return nil, fmt.Errorf("%w:%v", models_errors_anti_spambot.ErrInitBot, err)
@@ -47,8 +57,11 @@ func NewAntiSpamBot(conf *config.Config, storage Storage) (*Bot, error) {
 		Token:  conf.BotAntiSpam.Settings.AdmToken,
 		Poller: &telebot.LongPoller{Timeout: time.Second},
 	})
+	if err != nil {
+		return nil, fmt.Errorf("%w:%v", models_errors_anti_spambot.ErrInitBot, err)
+	}
 
-	// turn off inside logging
+	// отключаем внутреннее логирование библиотеки
 	bot.Debug = false
 
 	antiSpamBot := &Bot{
@@ -57,16 +70,23 @@ func NewAntiSpamBot(conf *config.Config, storage Storage) (*Bot, error) {
 		BotAdm:   botAdm,
 		conf:     conf,
 		Storage:  storage,
+		logger:   log,
 	}
 
 	return antiSpamBot, nil
 }
 
-// RegisterRoutes registers routes for tg bot in the forwarded router
+// RegisterRoutes регистрирует обработчики команд админ-бота.
 func (b *Bot) RegisterRoutes(ctx context.Context) {
 	b.BotAdm.Handle(admmodels.NewWord, b.InsertWord())
 	b.BotAdm.Handle(admmodels.ShowWords, b.GetWords())
 	b.BotAdm.Handle(admmodels.RemoveWord, b.DelWord())
+	b.BotAdm.Handle(admmodels.AddAuthor, b.AddAuthor())
+	b.BotAdm.Handle(admmodels.RemoveAuthor, b.RemoveAuthor())
+	b.BotAdm.Handle(admmodels.AddTag, b.AddTag())
+	b.BotAdm.Handle(admmodels.RemoveTag, b.RemoveTag())
+	b.BotAdm.Handle(admmodels.ShowWhitelist, b.ShowWhitelist())
+	b.BotAdm.Handle(admmodels.Info, b.Info())
 }
 
 func (b *Bot) Start() {

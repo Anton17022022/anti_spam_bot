@@ -6,7 +6,7 @@ import (
 	"gopkg.in/telebot.v3"
 )
 
-// DelWord ..
+// DelWord возвращает обработчик команды удаления слова из списка запрещённых.
 func (b *Bot) DelWord() func(ctx telebot.Context) error {
 	return func(ctx telebot.Context) error {
 		if !b.Auth(ctx.Sender().ID) {

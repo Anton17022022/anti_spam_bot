@@ -2,7 +2,7 @@ package models_adds
 
 import "regexp"
 
-// HasURL check if has url in text
+// HasURL проверяет, есть ли в тексте ссылка (URL).
 func HasURL(text string) bool {
 	urlPattern := `(https?://)?(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(/[^ \n]*)?`
 	re := regexp.MustCompile(urlPattern)

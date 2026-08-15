@@ -2,7 +2,6 @@ package antispambot
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -12,7 +11,7 @@ import (
 	"gopkg.in/telebot.v3"
 )
 
-// StartDelSpamMessage analyze message, and del spam.
+// StartDelSpamMessage анализирует входящие сообщения и удаляет спам.
 func (b *Bot) StartDelSpamMessage() {
 	u := tgbotapi.NewUpdate(b.conf.BotAntiSpam.Settings.OffsetMessageStart)
 	u.Timeout = b.conf.BotAntiSpam.Settings.TimeOut
@@ -20,17 +19,21 @@ func (b *Bot) StartDelSpamMessage() {
 	updates := b.Bot.GetUpdatesChan(u)
 
 	for update := range updates {
-		// TODO machinerya
+		// TODO: вынести обработку обновления в отдельный механизм/очередь
 		go func() {
-			// check is message nil
+			// проверяем, что сообщение существует
 			if update.Message != nil {
 				if b.isWhiteList(update.Message) {
 					return
 				}
 
-				// check is message is for del
+				// проверяем, подлежит ли сообщение удалению
 				if b.isForDel(update.Message) {
-					log.Printf("deleted spam message: chat ID: %d, user: %s, message ID: %d\n", update.Message.Chat.ID, update.Message.From.UserName, update.Message.MessageID)
+					b.logger.Info("deleted spam message",
+						"chat_id", update.Message.Chat.ID,
+						"user", update.Message.From.UserName,
+						"message_id", update.Message.MessageID,
+					)
 
 					deleteMsg := tgbotapi.NewDeleteMessage(update.Message.Chat.ID, update.Message.MessageID)
 
@@ -41,11 +44,12 @@ func (b *Bot) StartDelSpamMessage() {
 	}
 }
 
+// isForDel определяет, является ли сообщение спамом (реклама или ссылка).
 func (b *Bot) isForDel(msg *tgbotapi.Message) bool {
 	return b.containsAd(msg.Caption) || b.containsAd(msg.Text) || b.containsLink(msg)
 }
 
-// containsAd check if message is ad
+// containsAd проверяет, содержит ли текст рекламное/запрещённое слово.
 func (b *Bot) containsAd(text string) bool {
 	if text == "" {
 		return false
@@ -92,14 +96,20 @@ func (b *Bot) deleteMessageWithRetry(deleteMsg tgbotapi.DeleteMessageConfig) {
 
 	for i := 0; i < retries; i++ {
 		if _, err := b.Bot.Request(deleteMsg); err != nil {
-			log.Printf("Failed to delete message (attempt %d): %v. chat ID: %d, user: %s, message ID: %d", i+1, err.Error(), deleteMsg.ChatID, deleteMsg.ChannelUsername, deleteMsg.MessageID)
+			b.logger.Warn("failed to delete message",
+				"attempt", i+1,
+				"error", err.Error(),
+				"chat_id", deleteMsg.ChatID,
+				"user", deleteMsg.ChannelUsername,
+				"message_id", deleteMsg.MessageID,
+			)
 
 			if i == retries-1 {
-				log.Println("Max retries reached, giving up.")
+				b.logger.Warn("max retries reached, giving up")
 				return
 			}
 
-			// TODO лютый хардкод - вынести в целом реатри в раунд триппер с изменений задержки (в частности прогрессивной)
+			// TODO: жёсткий хардкод — вынести ретраи в отдельный механизм (round tripper) с прогрессивной задержкой
 			time.Sleep(b.conf.BotAntiSpam.Settings.TimeOutBetweenRetries)
 
 			continue
@@ -110,17 +120,34 @@ func (b *Bot) deleteMessageWithRetry(deleteMsg tgbotapi.DeleteMessageConfig) {
 }
 
 func (b *Bot) isWhiteList(msg *tgbotapi.Message) bool {
-	for _, whAutor := range b.conf.BotAntiSpam.WhiteListAuthor {
-		if msg.From.ID == whAutor {
-			return true
-		}
+	isAuthor, err := b.Storage.IsWhitelistAuthor(msg.From.ID)
+	if err != nil {
+		b.logger.Error("failed to check whitelist author",
+			"error", err.Error(),
+			"user_id", msg.From.ID,
+		)
+		return false
+	}
+	if isAuthor {
+		return true
+	}
+
+	tags, err := b.Storage.GetWhitelistTags()
+	if err != nil {
+		b.logger.Error("failed to get whitelist tags",
+			"error", err.Error(),
+			"user_id", msg.From.ID,
+		)
+		return false
 	}
 
 	words := strings.Split(msg.Text, " ")
 
-	for _, v := range words {
-		if _, ok := b.conf.BotAntiSpam.WhiteListTags[v]; ok {
-			return true
+	for _, word := range words {
+		for _, tag := range tags {
+			if word == tag {
+				return true
+			}
 		}
 	}
 

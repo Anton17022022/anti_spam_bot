@@ -3,15 +3,16 @@ package app
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 
 	antispambot "telegram-antispam-bot/internal/app/anti_spam_bot"
 	"telegram-antispam-bot/internal/infra/config"
+	"telegram-antispam-bot/internal/infra/logger"
 	"telegram-antispam-bot/internal/infra/storage"
 	models_err_app "telegram-antispam-bot/internal/models/errors/app"
 )
 
-// App is app
+// App — корневой объект приложения.
 type App struct {
 	service service
 	infra   infra
@@ -26,18 +27,21 @@ type service struct {
 	antiSpamBot antispambot.Bot
 }
 
-// NewApp init app components. Return instance.
+// NewApp инициализирует компоненты приложения и возвращает его экземпляр.
 func NewApp(ctx context.Context) (*App, error) {
 	a := App{}
 
-	// not err return. init internal. not ideomatic
+	log := logger.New()
+
 	if err := a.initInfra(); err != nil {
 		return nil, fmt.Errorf("%w:%v", models_err_app.ErrInitApp, err)
 	}
 
-	if err := a.initService(ctx); err != nil {
+	if err := a.initService(ctx, log); err != nil {
 		return nil, fmt.Errorf("%w:%v", models_err_app.ErrInitApp, err)
 	}
+
+	log.Info("app inited")
 
 	return &a, nil
 }
@@ -61,13 +65,13 @@ func (a *App) initInfra() error {
 	return nil
 }
 
-func (a *App) initService(ctx context.Context) error {
-	bot, err := antispambot.NewAntiSpamBot(a.infra.conf, a.infra.storage)
+func (a *App) initService(ctx context.Context, log *slog.Logger) error {
+	bot, err := antispambot.NewAntiSpamBot(a.infra.conf, a.infra.storage, log)
 	if err != nil {
 		return fmt.Errorf("%w:%v", models_err_app.ErrInitService, err)
 	}
 
-	log.Printf("Authorized on account %s", bot.UserName)
+	log.Info("authorized on account", "account", bot.UserName)
 
 	bot.RegisterRoutes(ctx)
 
@@ -76,7 +80,7 @@ func (a *App) initService(ctx context.Context) error {
 	return nil
 }
 
-// ListenAndServe start app
+// ListenAndServe запускает приложение.
 func (a *App) ListenAndServe() {
 	go func() {
 		a.service.antiSpamBot.Start()
