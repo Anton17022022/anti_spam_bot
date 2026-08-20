@@ -124,42 +124,63 @@ func (b *Bot) deleteMessageWithRetry(deleteMsg tgbotapi.DeleteMessageConfig) {
 	}
 }
 
-// senderID возвращает ID отправителя сообщения: пользователя или канала (от имени которого написано).
+// senderID возвращает ID отправителя для логов: для сообщений от имени канала —
+// ID канала (SenderChat), иначе — пользователя (From).
 func (b *Bot) senderID(msg *tgbotapi.Message) (int64, bool) {
-	if msg.From != nil {
-		return msg.From.ID, true
-	}
-
 	if msg.SenderChat != nil {
 		return msg.SenderChat.ID, true
+	}
+
+	if msg.From != nil {
+		return msg.From.ID, true
 	}
 
 	return 0, false
 }
 
+// senderIDs возвращает все возможные идентичности отправителя сообщения:
+// пользователя (From) и, при отправке от имени чата/канала, сам канал (SenderChat).
+// Канал в разных сообщениях фигурирует под разными формами ID, поэтому для
+// whitelist-проверки учитываем все.
+func (b *Bot) senderIDs(msg *tgbotapi.Message) []int64 {
+	ids := make([]int64, 0, 2)
+
+	if msg.From != nil {
+		ids = append(ids, msg.From.ID)
+	}
+
+	if msg.SenderChat != nil {
+		ids = append(ids, msg.SenderChat.ID)
+	}
+
+	return ids
+}
+
 func (b *Bot) isWhiteList(msg *tgbotapi.Message) bool {
-	senderID, ok := b.senderID(msg)
-	if !ok {
+	candidates := b.senderIDs(msg)
+	if len(candidates) == 0 {
 		return false
 	}
 
-	isAuthor, err := b.Storage.IsWhitelistAuthor(senderID)
-	if err != nil {
-		b.logger.Error("failed to check whitelist author",
-			"error", err.Error(),
-			"user_id", senderID,
-		)
-		return false
-	}
-	if isAuthor {
-		return true
+	for _, id := range candidates {
+		isAuthor, err := b.Storage.IsWhitelistAuthor(id)
+		if err != nil {
+			b.logger.Error("failed to check whitelist author",
+				"error", err.Error(),
+				"user_id", id,
+			)
+			continue
+		}
+		if isAuthor {
+			return true
+		}
 	}
 
 	tags, err := b.Storage.GetWhitelistTags()
 	if err != nil {
 		b.logger.Error("failed to get whitelist tags",
 			"error", err.Error(),
-			"user_id", senderID,
+			"user_id", candidates[0],
 		)
 		return false
 	}
