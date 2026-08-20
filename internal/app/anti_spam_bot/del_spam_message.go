@@ -28,6 +28,12 @@ func (b *Bot) StartDelSpamMessage() {
 					return
 				}
 
+				// сообщение, отправленное от имени канала из whitelist, пропускаем
+				// целиком — такому каналу можно писать и присылать что угодно.
+				if b.isWhitelistedChannel(update.Message) {
+					return
+				}
+
 				if b.isWhiteList(update.Message) {
 					return
 				}
@@ -47,6 +53,37 @@ func (b *Bot) StartDelSpamMessage() {
 			}
 		}()
 	}
+}
+
+// isWhitelistedChannel возвращает true, если сообщение отправлено от имени канала
+// (SenderChat != nil) и этот канал находится в whitelist авторов. Проверяем оба
+// представления ID канала — SenderChat.ID и From.ID — т.к. в разных сообщениях канал
+// фигурирует под разными формами ID.
+func (b *Bot) isWhitelistedChannel(msg *tgbotapi.Message) bool {
+	if msg.SenderChat == nil {
+		return false
+	}
+
+	ids := []int64{msg.SenderChat.ID}
+	if msg.From != nil {
+		ids = append(ids, msg.From.ID)
+	}
+
+	for _, id := range ids {
+		isAuthor, err := b.Storage.IsWhitelistAuthor(id)
+		if err != nil {
+			b.logger.Error("failed to check whitelist channel",
+				"error", err.Error(),
+				"channel_id", id,
+			)
+			continue
+		}
+		if isAuthor {
+			return true
+		}
+	}
+
+	return false
 }
 
 // isForDel определяет, является ли сообщение спамом (реклама или ссылка).
